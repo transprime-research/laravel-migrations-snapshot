@@ -108,6 +108,7 @@ class MigrationSnapshot extends Command
         $closure = $this->makeUpClosure(collect($schema));
 
         $this->createUpMethod($class, $table, $closure);
+        $this->createDownMethod($class, $table);
 
 
         $printer = (new PsrPrinter())->printFile($file);
@@ -163,7 +164,7 @@ class MigrationSnapshot extends Command
     {
         return $class->addMethod('up')
             ->setVisibility('public')
-            ->addComment('Migrate the table')
+            ->addComment('Run the migrations')
             ->setBody(
                 'Schema::create(\'' . $table_name . '\', ' . $closure . ');'
             );
@@ -171,9 +172,9 @@ class MigrationSnapshot extends Command
 
     private function createDownMethod(ClassType $class, string $table_name, string $closure = null)
     {
-        return $class->addMethod('up')
+        return $class->addMethod('down')
             ->setVisibility('public')
-            ->addComment('Migrate the table')
+            ->addComment('Reverse the migrations')
             ->setBody(
                 "Schema::dropIfExists('${table_name}');"
             );
