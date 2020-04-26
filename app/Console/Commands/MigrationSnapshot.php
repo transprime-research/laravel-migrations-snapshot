@@ -88,9 +88,18 @@ class MigrationSnapshot extends Command
 
 
         $conn = config('database.default');
+        $database = config("database.connections.$conn.database");
 
-        $table = 'users';
+        collect(Schema::getAllTables())
+            ->pluck("Tables_in_$database")
+            ->diff(['migrations'])
+            ->each(function ($table) use ($conn) {
+                $this->createSchema($conn, $table);
+            });
+    }
 
+    private function createSchema(string $conn, string $table)
+    {
         if ($conn === 'mysql') {
             $schema = DB::select(\DB::raw("SHOW COLUMNS FROM $table"));
         } else {
@@ -123,41 +132,33 @@ class MigrationSnapshot extends Command
     {
         $closure = $this->addClosure();
 
-        $collect->each(function (\stdClass $table) use (&$closure){
-            $type = explode(' ', $table->Type);
-            $data = '';
-            $data .= '$table->'
-                . (
-                $table->Extra ?
-                    $this->typeMaps($table->Extra) . "('" . $table->Field . "');"
-                    : (
-                    $this->typeMaps($type[0]) . "('" . $table->Field . "')" .
-                    (isset($type[1]) ? $this->typeMaps($type[1]) . '();' : ';')
-                )
-                );
-            $this->addToClosure($closure, $data);
+        $collect->each(function (\stdClass $column) use (&$closure) {
+            $this->addToClosure($closure, $this->createColumn($column));
         });
 
         return $closure;
     }
 
-    public function createFile()
+    private function createColumn(\stdClass $column)
     {
-        $file = new PhpFile();
+        $type = explode(' ', $column->Type);
+        $data = '';
+        $data .= '$table->'
+            . (
+            $column->Extra ?
+                $this->typeMaps($column->Extra) . "('" . $column->Field . "');"
+                : (
+                $this->typeMaps($type[0]) . "('" . $column->Field . "')" .
+                (isset($type[1]) ? $this->typeMaps($type[1]) . '();' : ';')
+            )
+            );
 
-        $file->addUse('Illuminate\Database\Schema\Blueprint;');
-        $file->addUse('Illuminate\Support\Facades\Schema;');
-
-        return $file;
+        return $data;
     }
 
-    private function createClass(PhpFile $file, string $create_name, string $table_name)
+    public function addToClosure(Closure $closure, string $content)
     {
-        $class = $file->addClass(Str::studly($create_name));
-
-        $class->addComment("Migration for $table_name table");
-
-        return $class;
+        return $closure->addBody($content);
     }
 
     private function createUpMethod(ClassType $class, string $table_name, string $closure)
@@ -170,6 +171,15 @@ class MigrationSnapshot extends Command
             );
     }
 
+    private function createClass(PhpFile $file, string $create_name, string $table_name)
+    {
+        $class = $file->addClass(Str::studly($create_name));
+
+        $class->addComment("Migration for $table_name table");
+
+        return $class;
+    }
+
     private function createDownMethod(ClassType $class, string $table_name, string $closure = null)
     {
         return $class->addMethod('down')
@@ -178,6 +188,16 @@ class MigrationSnapshot extends Command
             ->setBody(
                 "Schema::dropIfExists('${table_name}');"
             );
+    }
+
+    private function createFile()
+    {
+        $file = new PhpFile();
+
+        $file->addUse('Illuminate\Database\Schema\Blueprint');
+        $file->addUse('Illuminate\Support\Facades\Schema');
+
+        return $file;
     }
 
     private function addClosure()
@@ -189,16 +209,13 @@ class MigrationSnapshot extends Command
         return $closure;
     }
 
-    public function addToClosure(Closure $closure, string $content)
-    {
-        return $closure->addBody($content);
-    }
-
     public function typeMaps($field): string
     {
         $fields = [
             'bigint' => 'bigInteger',
-            'bigint(20)' => 'bigInteger',
+            'int(11)' => 'bigInteger',
+            'int' => 'integer',
+            'bigint(20)' => 'integer',
             'unsigned' => 'unsigned',
             'auto_increment' => 'increments',
             'timestamp' => 'timestamp',
@@ -206,6 +223,8 @@ class MigrationSnapshot extends Command
             'varchar' => 'string',
             'varchar(255)' => 'string',
             'varchar(100)' => 'string',
+            'text' => 'text',
+            'longtext' => 'longText'
         ];
 
         return $fields[$field];
