@@ -140,14 +140,24 @@ class MigrationSnapshot extends Command
 
     private function createColumn(\stdClass $column)
     {
+        $typeSizePattern = '/\(([^)]+)\)/';
+
         $type = explode(' ', $column->Type);
+
+        preg_match($typeSizePattern, $type[0], $typeSize);
+        $typeString = str_replace($typeSize[0] ?? '', '', $type[0]);
+
+
         $data = '$table->';
 
         if ($column->Extra) {
-            return $data.$this->typeMaps($column->Extra) . "('" . $column->Field . "');";
+            $parametersString = $this->makeParameters($column->Field, []);
+            return $data.$this->typeMaps($column->Extra) . $parametersString.';';
         }
 
-        $data .= $this->typeMaps($type[0]) . "('" . $column->Field . "')";
+        $parametersString = $this->makeParameters($column->Field, $typeSize);
+
+        $data .= $this->typeMaps($typeString) .$parametersString;
 
         if (isset($type[1])) {
             $data .= $this->typeMaps($type[1]).'();';
@@ -156,6 +166,17 @@ class MigrationSnapshot extends Command
         }
 
         return $data;
+    }
+
+    private function makeParameters(string $columnField, array $typeSize)
+    {
+        $parametersString = "('$columnField'";
+
+        if ($typeSize[1] ?? false) {
+            $parametersString .= ", $typeSize[1]";
+        }
+
+        return "$parametersString)";
     }
 
     public function addToClosure(Closure $closure, string $content)
