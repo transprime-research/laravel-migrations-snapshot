@@ -6,12 +6,10 @@ use Illuminate\Console\Command;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Nette\PhpGenerator\ClassType;
 use Nette\PhpGenerator\Closure;
 use Nette\PhpGenerator\PhpFile;
-use Nette\PhpGenerator\Printer;
 use Nette\PhpGenerator\PsrPrinter;
 
 class MigrationSnapshot extends Command
@@ -88,6 +86,7 @@ class MigrationSnapshot extends Command
 
 
         $conn = config('database.default');
+        dump(Schema::Connection($conn)->getColumnListing('users'));
         $database = config("database.connections.$conn.database");
 
         collect(Schema::getAllTables())
@@ -142,16 +141,19 @@ class MigrationSnapshot extends Command
     private function createColumn(\stdClass $column)
     {
         $type = explode(' ', $column->Type);
-        $data = '';
-        $data .= '$table->'
-            . (
-            $column->Extra ?
-                $this->typeMaps($column->Extra) . "('" . $column->Field . "');"
-                : (
-                $this->typeMaps($type[0]) . "('" . $column->Field . "')" .
-                (isset($type[1]) ? $this->typeMaps($type[1]) . '();' : ';')
-            )
-            );
+        $data = '$table->';
+
+        if ($column->Extra) {
+            return $data.$this->typeMaps($column->Extra) . "('" . $column->Field . "');";
+        }
+
+        $data .= $this->typeMaps($type[0]) . "('" . $column->Field . "')";
+
+        if (isset($type[1])) {
+            $data .= $this->typeMaps($type[1]).'();';
+        } else {
+            $data .= ';';
+        }
 
         return $data;
     }
