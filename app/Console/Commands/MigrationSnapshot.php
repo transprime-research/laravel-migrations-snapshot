@@ -151,7 +151,13 @@ class MigrationSnapshot extends Command
 
         $parametersString = $this->makeParameters($column->Field, $typeSize);
 
-        $data .= $this->typeMaps($typeString) .$parametersString;
+        $lastType = $this->typeMaps($typeString);
+
+        if (strpos($lastType, '(') !== false) {
+            $data .= "$lastType'$column->Field'".')';
+        } else {
+            $data .=  $lastType.$parametersString;
+        }
 
         if (isset($type[1])) {
             $data .= '->'.$this->typeMaps($type[1]).'()';
@@ -231,19 +237,17 @@ class MigrationSnapshot extends Command
     public function typeMaps($field): string
     {
         $fields = [
+            'tinyint' => 'boolean(',
+            'smallint' => 'smallInteger',
             'bigint' => 'bigInteger',
-            'int(11)' => 'bigInteger',
             'int' => 'integer',
-            'bigint(20)' => 'integer',
             'unsigned' => 'unsigned',
             'auto_increment' => 'autoIncrement',
             'timestamp' => 'timestamp',
             'YES' => 'nullable', // nullable
             'varchar' => 'string',
-            'varchar(255)' => 'string',
-            'varchar(100)' => 'string',
             'text' => 'text',
-            'longtext' => 'longText'
+            'longtext' => 'longText',
         ];
 
         return $fields[$field];
