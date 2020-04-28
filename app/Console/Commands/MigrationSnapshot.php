@@ -147,25 +147,21 @@ class MigrationSnapshot extends Command
         preg_match($typeSizePattern, $type[0], $typeSize);
         $typeString = str_replace($typeSize[0] ?? '', '', $type[0]);
 
-
         $data = '$table->';
-
-        if ($column->Extra) {
-            $parametersString = $this->makeParameters($column->Field, []);
-            return $data.$this->typeMaps($column->Extra) . $parametersString.';';
-        }
 
         $parametersString = $this->makeParameters($column->Field, $typeSize);
 
         $data .= $this->typeMaps($typeString) .$parametersString;
 
         if (isset($type[1])) {
-            $data .= $this->typeMaps($type[1]).'();';
-        } else {
-            $data .= ';';
+            $data .= '->'.$this->typeMaps($type[1]).'()';
         }
 
-        return $data;
+        if ($column->Extra) {
+            $data .= '->'.$this->typeMaps($column->Extra).'()';
+        }
+
+        return $data.';';
     }
 
     private function makeParameters(string $columnField, array $typeSize)
@@ -240,7 +236,7 @@ class MigrationSnapshot extends Command
             'int' => 'integer',
             'bigint(20)' => 'integer',
             'unsigned' => 'unsigned',
-            'auto_increment' => 'increments',
+            'auto_increment' => 'autoIncrement',
             'timestamp' => 'timestamp',
             'YES' => 'nullable', // nullable
             'varchar' => 'string',
