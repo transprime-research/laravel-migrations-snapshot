@@ -165,23 +165,23 @@ class MigrationSnapshot extends Command
         }
 
         if ($column->Extra) {
-            $data .= '->' . $this->typeMaps($column->Extra) . '()';
+            $data .= '->' . $this->extraMaps($column->Extra) . '()';
         }
 
         if ($column->Default) {
-            if ($this->existsInMaps($column->Default)) {
-                $data .= '->' . $this->typeMaps($column->Default) . '()';
+            if ($this->existsInDefaults($column->Default)) {
+                $data .= '->' . $this->defaultMaps($column->Default) . '()';
             } else {
                 $data .= "->default('" . $column->Default . "')";
             }
         }
 
-        if ($column->Null === 'YES') {
-            $data .= "->nullable()";
+        if ($nullMapped = $this->nullMaps($column->Null)) {
+            $data .= "->$nullMapped()";
         }
 
-        if ($column->Key === 'UNI') {
-            $data .= "->unique()";
+        if ($keyMapped = $this->keyMaps($column->Key)) {
+            $data .= "->$keyMapped()";
         }
 
         return $data . ';';
@@ -253,15 +253,33 @@ class MigrationSnapshot extends Command
         return $closure;
     }
 
-    private function typeMaps($field): string
+    private function extraMaps($field): ?string
     {
-        $fields = config('migrations-snapshot.maps');
-
-        return $fields[$field];
+        return config("migrations-snapshot.maps.extras.$field");
     }
 
-    private function existsInMaps($field)
+    private function typeMaps($field): ?string
     {
-        return config("migrations-snapshot.maps.$field") != null;
+        return config("migrations-snapshot.maps.types.$field");
+    }
+
+    private function defaultMaps($field): ?string
+    {
+        return config("migrations-snapshot.maps.defaults.$field");
+    }
+
+    private function nullMaps($field): ?string
+    {
+        return config("migrations-snapshot.maps.nulls.$field");
+    }
+
+    private function keyMaps($field): ?string
+    {
+        return config("migrations-snapshot.maps.keys.$field");
+    }
+
+    private function existsInDefaults($field): ?string
+    {
+        return config("migrations-snapshot.maps.defaults.$field") != null;
     }
 }
