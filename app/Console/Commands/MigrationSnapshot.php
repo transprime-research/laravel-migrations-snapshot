@@ -110,6 +110,7 @@ class MigrationSnapshot extends Command
         $file_name = now()->format('Y_m_d_His') . "_${create_name}.php";
 
         dump("Creating: ${file_name}_${create_name}.php");
+
         $file = $this->createFile();
 
         $class = $this->createClass($file, $create_name, $table);
@@ -212,6 +213,7 @@ class MigrationSnapshot extends Command
     {
         $class = $file->addClass(Str::studly($create_name));
 
+        $class->addExtend('Migration');
         $class->addComment("Migration for $table_name table");
 
         return $class;
@@ -233,6 +235,7 @@ class MigrationSnapshot extends Command
 
         $file->addUse('Illuminate\Database\Schema\Blueprint');
         $file->addUse('Illuminate\Support\Facades\Schema');
+        $file->addUse('Illuminate\Database\Migrations\Migration');
 
         return $file;
     }
