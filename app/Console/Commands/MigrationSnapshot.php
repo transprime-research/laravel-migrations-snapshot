@@ -180,6 +180,10 @@ class MigrationSnapshot extends Command
             $data .= "->nullable()";
         }
 
+        if ($column->Key === 'UNI') {
+            $data .= "->unique()";
+        }
+
         return $data . ';';
     }
 
