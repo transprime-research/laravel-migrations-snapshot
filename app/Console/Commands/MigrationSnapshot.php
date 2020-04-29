@@ -109,6 +109,7 @@ class MigrationSnapshot extends Command
 
         $file_name = now()->format('Y_m_d_His') . "_${create_name}.php";
 
+        dump("Creating: ${file_name}_${create_name}.php");
         $file = $this->createFile();
 
         $class = $this->createClass($file, $create_name, $table);
@@ -117,7 +118,6 @@ class MigrationSnapshot extends Command
 
         $this->createUpMethod($class, $table, $closure);
         $this->createDownMethod($class, $table);
-
 
         $printer = (new PsrPrinter())->printFile($file);
 
@@ -140,6 +140,7 @@ class MigrationSnapshot extends Command
 
     private function createColumn(\stdClass $column)
     {
+//        dump($column);
         $typeSizePattern = '/\(([^)]+)\)/';
 
         $type = explode(' ', $column->Type);
@@ -154,20 +155,28 @@ class MigrationSnapshot extends Command
         $lastType = $this->typeMaps($typeString);
 
         if (strpos($lastType, '(') !== false) {
-            $data .= "$lastType'$column->Field'".')';
+            $data .= "$lastType'$column->Field'" . ')';
         } else {
-            $data .=  $lastType.$parametersString;
+            $data .= $lastType . $parametersString;
         }
 
         if (isset($type[1])) {
-            $data .= '->'.$this->typeMaps($type[1]).'()';
+            $data .= '->' . $this->typeMaps($type[1]) . '()';
         }
 
         if ($column->Extra) {
-            $data .= '->'.$this->typeMaps($column->Extra).'()';
+            $data .= '->' . $this->typeMaps($column->Extra) . '()';
         }
 
-        return $data.';';
+        if ($column->Default) {
+            if ($this->existsInMaps($column->Default)) {
+                $data .= '->' . $this->typeMaps($column->Default) . '()';
+            } else {
+                $data .= "->default('".$column->Default.")'";
+            }
+        }
+
+        return $data . ';';
     }
 
     private function makeParameters(string $columnField, array $typeSize)
@@ -234,22 +243,15 @@ class MigrationSnapshot extends Command
         return $closure;
     }
 
-    public function typeMaps($field): string
+    private function typeMaps($field): string
     {
-        $fields = [
-            'tinyint' => 'boolean(',
-            'smallint' => 'smallInteger',
-            'bigint' => 'bigInteger',
-            'int' => 'integer',
-            'unsigned' => 'unsigned',
-            'auto_increment' => 'autoIncrement',
-            'timestamp' => 'timestamp',
-            'YES' => 'nullable', // nullable
-            'varchar' => 'string',
-            'text' => 'text',
-            'longtext' => 'longText',
-        ];
+        $fields = config('migrations-snapshot.maps');
 
         return $fields[$field];
+    }
+
+    private function existsInMaps($field)
+    {
+        return config("migrations-snapshot.maps.$field") != null;
     }
 }
