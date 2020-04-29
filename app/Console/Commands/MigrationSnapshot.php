@@ -140,7 +140,6 @@ class MigrationSnapshot extends Command
 
     private function createColumn(\stdClass $column)
     {
-//        dump($column);
         $typeSizePattern = '/\(([^)]+)\)/';
 
         $type = explode(' ', $column->Type);
@@ -172,8 +171,12 @@ class MigrationSnapshot extends Command
             if ($this->existsInMaps($column->Default)) {
                 $data .= '->' . $this->typeMaps($column->Default) . '()';
             } else {
-                $data .= "->default('".$column->Default.")'";
+                $data .= "->default('" . $column->Default . "')";
             }
+        }
+
+        if ($column->Null === 'YES') {
+            $data .= "->nullable()";
         }
 
         return $data . ';';
