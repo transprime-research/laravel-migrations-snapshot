@@ -3697,16 +3697,16 @@
         },
         {
             "name": "transprime-research/piper",
-            "version": "2.0.0",
+            "version": "2.0.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/transprime-research/piper.git",
-                "reference": "ed5afe6f8b2fa31136f773799e588f34da2cae2d"
+                "reference": "c9dde00f6a75b4b3fb5e331a8c95627fc672c67f"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/transprime-research/piper/zipball/ed5afe6f8b2fa31136f773799e588f34da2cae2d",
-                "reference": "ed5afe6f8b2fa31136f773799e588f34da2cae2d",
+                "url": "https://api.github.com/repos/transprime-research/piper/zipball/c9dde00f6a75b4b3fb5e331a8c95627fc672c67f",
+                "reference": "c9dde00f6a75b4b3fb5e331a8c95627fc672c67f",
                 "shasum": ""
             },
             "require": {
@@ -3744,7 +3744,7 @@
                 "php",
                 "pipe"
             ],
-            "time": "2020-04-24T23:52:27+00:00"
+            "time": "2020-04-29T21:01:16+00:00"
         },
         {
             "name": "vlucas/phpdotenv",
