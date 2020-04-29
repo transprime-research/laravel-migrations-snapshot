@@ -15,7 +15,8 @@
         "guzzlehttp/guzzle": "^6.3",
         "laravel/framework": "^7.0",
         "laravel/tinker": "^2.0",
-        "nette/php-generator": "^3.3"
+        "nette/php-generator": "^3.3",
+        "transprime-research/piper": "^2.0"
     },
     "require-dev": {
         "facade/ignition": "^2.0",

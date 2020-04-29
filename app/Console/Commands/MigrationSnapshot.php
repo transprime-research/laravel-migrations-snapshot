@@ -6,11 +6,13 @@ use Illuminate\Console\Command;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Nette\PhpGenerator\ClassType;
 use Nette\PhpGenerator\Closure;
 use Nette\PhpGenerator\PhpFile;
 use Nette\PhpGenerator\PsrPrinter;
+use Transprime\Piper\Piper;
 
 class MigrationSnapshot extends Command
 {
@@ -46,55 +48,55 @@ class MigrationSnapshot extends Command
     public function handle()
     {
 //        //see: https://doc.nette.org/en/3.0/php-generator
-//        $file = new PhpFile();
-//        $namespace = $file->addNamespace('Database\\Snapshots');
-//        $class = $namespace->addClass('Demo');
-//
-//        $class
-//            ->setFinal()
-//            ->addComment("Description of class.\nSecond line\n")
-//            ->addComment('@property-read Nette\Forms\Form $form');
-//
-//        $printer = (new PsrPrinter())->printFile($file);
-//
-//        $path = database_path('snapshots');
-//
-//        file_put_contents($path.'/demo1.php', $printer);
-
-
-//        foreach (Storage::files('migrations') as $file) {
-//
-//            if (strripos($file,'.php') !== false) {
-//
-//                $data[$file] = $this->strpos_recursive(Storage::get($file), 'Schema::');
-//            }
-//        }
-//        foreach (Storage::files('migrations') as $file) {
-//
-//            if (strripos($file,'.php') !== false) {
-//
-//                $pattern = "/Schema::\w+\(.*?\)/";
-////                $pattern = "/(?<=\bSchema\s)([a-zA-Z-]+)";
-//                preg_match_all($pattern, Storage::get($file), $matches);
-//                foreach ($matches[0] as $match) {
-//                    $data[$file][] = explode('(', $match)[1];
-//                };
-//            }
-//        }
-
-//        dump($data);
-
 
         $conn = config('database.default');
-        dump(Schema::Connection($conn)->getColumnListing('users'));
         $database = config("database.connections.$conn.database");
 
-        collect(Schema::getAllTables())
-            ->pluck("Tables_in_$database")
-            ->diff(['migrations'])
+        collect($this->getTables())
+            ->intersect(collect(Schema::getAllTables())->pluck("Tables_in_$database"))
             ->each(function ($table) use ($conn) {
                 $this->createSchema($conn, $table);
             });
+    }
+
+    private function getTables()
+    {
+        $data = [];
+        foreach (Storage::files('migrations') as $file) {
+
+            if (strripos($file, '.php') !== false) {
+
+                $matches = $this->getFileContent($file);
+                foreach ($matches[0] as $match) {
+                    $data[$file][] = $this->getATable($match);
+                };
+            }
+        }
+
+        return Piper::on($data)
+                ->to('array_map', fn($file) => $file[0])
+                ->to('array_unique')
+                ->to('array_values')();
+    }
+
+    private function getFileContent($file)
+    {
+        return piper($file)
+            ->to([Storage::class, 'get'])
+            ->to(function ($content) {
+                preg_match_all("/Schema::\w+\(.*?\)/", $content, $matches);
+
+                return $matches;
+            })();
+    }
+
+    private function getATable(string $match)
+    {
+        return piper($match)
+            ->to('explode', '(')
+            ->to(fn($data) => $data[1])
+            ->to('str_replace', [')', 'function', '\'', ','], '')
+            ->to('trim')();
     }
 
     private function createSchema(string $conn, string $table)

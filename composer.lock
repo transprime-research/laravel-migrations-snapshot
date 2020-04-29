@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "e0aa055d039d76da1941f2fae80db30c",
+    "content-hash": "0a13d649d6bdc47e3c58951789666d40",
     "packages": [
         {
             "name": "asm89/stack-cors",
@@ -3696,6 +3696,57 @@
             "time": "2019-10-24T08:53:34+00:00"
         },
         {
+            "name": "transprime-research/piper",
+            "version": "2.0.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/transprime-research/piper.git",
+                "reference": "ed5afe6f8b2fa31136f773799e588f34da2cae2d"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/transprime-research/piper/zipball/ed5afe6f8b2fa31136f773799e588f34da2cae2d",
+                "reference": "ed5afe6f8b2fa31136f773799e588f34da2cae2d",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=7.4"
+            },
+            "require-dev": {
+                "phpunit/phpunit": "~8.0"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Transprime\\Piper\\": "src"
+                },
+                "files": [
+                    "Helpers/helpers.php"
+                ]
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Oluwatobi Samuel Omisakin",
+                    "email": "omisakin.oluwatobi@gmail.com"
+                }
+            ],
+            "description": "PHP Pipe method execution with values from chained method executions",
+            "homepage": "https://transprime-research.github.io/piper/",
+            "keywords": [
+                "Piper",
+                "functional",
+                "helpers",
+                "laravel",
+                "php",
+                "pipe"
+            ],
+            "time": "2020-04-24T23:52:27+00:00"
+        },
+        {
             "name": "vlucas/phpdotenv",
             "version": "v4.1.4",
             "source": {
@@ -5809,5 +5860,6 @@
     "platform": {
         "php": "^7.2.5"
     },
-    "platform-dev": []
+    "platform-dev": [],
+    "plugin-api-version": "1.1.0"
 }
