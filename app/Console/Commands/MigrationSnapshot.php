@@ -52,11 +52,25 @@ class MigrationSnapshot extends Command
         $conn = config('database.default');
         $database = config("database.connections.$conn.database");
 
-        collect($this->getTables())
-            ->intersect(collect(Schema::getAllTables())->pluck("Tables_in_$database"))
-            ->each(function ($table) use ($conn) {
-                $this->createSchema($conn, $table);
-            });
+        $availableTables = collect(Schema::getAllTables())
+                ->pluck("Tables_in_$database")
+                ->diff(['migrations'])
+                ->values()
+                ->all();
+
+        //todo.update migrate in the order of migrations file
+        \piper($this->getTables())
+            ->to('array_intersect', $availableTables)
+            ->to('array_merge_recursive_distinct', $availableTables)
+            ->to('array_values')
+            ->to('array_map', fn($table) => $this->createSchema($conn, $table))
+            ->up();
+
+//        collect()
+//            ->intersect()
+//            ->each(function ($table) use ($conn) {
+//                ;
+//            });
     }
 
     private function getTables()
@@ -76,6 +90,7 @@ class MigrationSnapshot extends Command
         return Piper::on($data)
                 ->to('array_map', fn($file) => $file[0])
                 ->to('array_unique')
+                ->to(fn($tables) => array_filter($tables, fn($table) => strripos($table, ' ') === false))
                 ->to('array_values')();
     }
 
