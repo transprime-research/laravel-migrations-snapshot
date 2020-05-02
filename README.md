@@ -10,3 +10,6 @@
 ## About Laravel-migrations-snapshot
 
 Uses: https://doc.nette.org/en/3.0/php-generator
+See:
+
+- for foreignkey: https://github.com/oscarafdev/migrations-generator/blob/master/src/OscarAFDev/MigrationsGenerator/Generators/ForeignKeyGenerator.php
