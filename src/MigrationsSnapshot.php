@@ -15,7 +15,7 @@ use Nette\PhpGenerator\PhpFile;
 use Nette\PhpGenerator\PsrPrinter;
 use Transprime\Piper\Piper;
 
-class MigrationSnapshot extends Command
+class MigrationsSnapshot extends Command
 {
     /**
      * The name and signature of the console command.
@@ -60,6 +60,7 @@ class MigrationSnapshot extends Command
      * Execute the console command.
      *
      * @return mixed
+     * @throws \Transprime\Piper\Exceptions\PiperException
      */
     public function handle()
     {
@@ -155,7 +156,6 @@ class MigrationSnapshot extends Command
 
         file_put_contents($path . "/{$file_name}", $printer);
     }
-
 
     private function makeUpClosure(string $table, Collection $collect): Closure
     {

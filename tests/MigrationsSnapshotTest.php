@@ -2,7 +2,7 @@
 
 namespace Transprime\MigrationSnapshot\Tests;
 
-class MigrationSnapshotTest
+class MigrationsSnapshotTest
 {
 
 }
