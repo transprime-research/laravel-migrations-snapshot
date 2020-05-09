@@ -23,7 +23,10 @@ class MigrationsSnapshotServiceProvider extends ServiceProvider
                 MigrationsSnapshot::class,
             ]);
         }
+    }
 
-
+    public function register()
+    {
+        $this->mergeConfigFrom(__DIR__.'/../../config/migrations-snapshot.php', 'laravel-migrations-snapshot');
     }
 }
