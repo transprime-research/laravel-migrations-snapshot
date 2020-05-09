@@ -1,11 +1,11 @@
 version: "3"
 
 services:
-  app:
+  snapshot:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: app
+    container_name: snapshot
     env_file:
       - ./.env.dockerizer.local
     restart: unless-stopped
@@ -13,11 +13,11 @@ services:
     working_dir: /var/www/html
     environment:
       SERVICE_TAGS: dev
-      SERVICE_NAME: app
+      SERVICE_NAME: snapshot
     volumes:
       - ./:/var/www/html
     networks:
-      - laravel
+      - snapshot
 
   #Nginx Service
   nginx:
@@ -33,7 +33,7 @@ services:
       - ./nginx/conf.d/:/etc/nginx/conf.d/
       # - ./nginx/ssl/:/etc/nginx/ssl/
     networks:
-      - laravel
+      - snapshot
 
   #MySQL Service
   mysql:
@@ -53,11 +53,11 @@ services:
     volumes:
       - mysqldata:/var/lib/mysql/
     networks:
-      - laravel
+      - snapshot
 
 #Docker Networks
 networks:
-  laravel:
+  snapshot:
     driver: bridge
 #Volumes
 volumes:

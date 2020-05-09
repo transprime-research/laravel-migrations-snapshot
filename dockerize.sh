@@ -9,11 +9,11 @@ then
   docker-compose build
 fi
 
-docker-compose exec app composer install
+docker-compose exec snapshot composer install
 
 if [ "$command" = '--reset_migration' ]
 then
-    docker-compose exec app php artisan migrate:fresh
+    docker-compose exec snapshot php artisan migrate:fresh
 else
-    docker-compose exec app php artisan migrate
+    docker-compose exec snapshot php artisan migrate
 fi
