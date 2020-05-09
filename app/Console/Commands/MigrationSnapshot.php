@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use Doctrine\DBAL\Schema\ForeignKeyConstraint;
 use Illuminate\Console\Command;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -28,7 +29,18 @@ class MigrationSnapshot extends Command
      *
      * @var string
      */
-    protected $description = 'Command description';
+    protected $description = 'Execute the migration snapshot';
+
+    /**
+     * @var \Illuminate\Config\Repository|string $connection
+     */
+    private $connection;
+
+    /**
+     * @var \Illuminate\Config\Repository|string $database
+     */
+    private $database;
+    private $doctrineConnection;
 
     /**
      * Create a new command instance.
@@ -38,6 +50,10 @@ class MigrationSnapshot extends Command
     public function __construct()
     {
         parent::__construct();
+
+        $this->connection = config('database.default');
+        $this->database = config('database.connections.'.$this->connection.'.database');
+        $this->doctrineConnection = DB::connection($this->connection)->getDoctrineSchemaManager();
     }
 
     /**
@@ -47,23 +63,21 @@ class MigrationSnapshot extends Command
      */
     public function handle()
     {
-//        //see: https://doc.nette.org/en/3.0/php-generator
-
-        $conn = config('database.default');
-        $database = config("database.connections.$conn.database");
+        //see: https://doc.nette.org/en/3.0/php-generator
 
         $availableTables = collect(Schema::getAllTables())
-                ->pluck("Tables_in_$database")
-                ->diff(['migrations'])
-                ->values()
-                ->all();
+            ->pluck('Tables_in_'.$this->database)
+            ->diff(['migrations'])
+            ->values()
+            ->all();
 
         //todo.update migrate in the order of migrations file
-        \piper($this->getTables())
-            ->to('array_intersect', $availableTables)
-            ->to('array_merge_recursive_distinct', $availableTables)
+        $tablesFromFile = $this->getTables();
+
+        \piper($availableTables)
+            ->to('array_merge_recursive_distinct', $tablesFromFile)
             ->to('array_values')
-            ->to('array_map', fn($table) => $this->createSchema($conn, $table))
+            ->to('array_map', fn($table) => $this->createSchema($table))
             ->up();
 
 //        collect()
@@ -77,21 +91,19 @@ class MigrationSnapshot extends Command
     {
         $data = [];
         foreach (Storage::files('migrations') as $file) {
-
             if (strripos($file, '.php') !== false) {
-
                 $matches = $this->getFileContent($file);
                 foreach ($matches[0] as $match) {
                     $data[$file][] = $this->getATable($match);
-                };
+                }
             }
         }
 
         return Piper::on($data)
-                ->to('array_map', fn($file) => $file[0])
-                ->to('array_unique')
-                ->to(fn($tables) => array_filter($tables, fn($table) => strripos($table, ' ') === false))
-                ->to('array_values')();
+            ->to('array_map', fn($file) => $file[0])
+            ->to('array_unique')
+            ->to(fn($tables) => array_filter($tables, fn($table) => strripos($table, ' ') === false))
+            ->to('array_values')();
     }
 
     private function getFileContent($file)
@@ -114,9 +126,9 @@ class MigrationSnapshot extends Command
             ->to('trim')();
     }
 
-    private function createSchema(string $conn, string $table)
+    private function createSchema(string $table)
     {
-        if ($conn === 'mysql') {
+        if ($this->connection === 'mysql') {
             $schema = DB::select(\DB::raw("SHOW COLUMNS FROM $table"));
         } else {
             $schema = Schema::parseSchemaAndTable($table);
@@ -126,13 +138,13 @@ class MigrationSnapshot extends Command
 
         $file_name = now()->format('Y_m_d_His') . "_${create_name}.php";
 
-        dump("Creating: ${file_name}_${create_name}.php");
+        dump("Creating: ${file_name}.php");
 
         $file = $this->createFile();
 
         $class = $this->createClass($file, $create_name, $table);
 
-        $closure = $this->makeUpClosure(collect($schema));
+        $closure = $this->makeUpClosure($table, collect($schema));
 
         $this->createUpMethod($class, $table, $closure);
         $this->createDownMethod($class, $table);
@@ -145,13 +157,17 @@ class MigrationSnapshot extends Command
     }
 
 
-    public function makeUpClosure(Collection $collect): Closure
+    private function makeUpClosure(string $table, Collection $collect): Closure
     {
         $closure = $this->addClosure();
 
         $collect->each(function (\stdClass $column) use (&$closure) {
             $this->addToClosure($closure, $this->createColumn($column));
         });
+
+        foreach ($this->createForeignSchema($table) as $foreign) {
+            $this->addToClosure($closure, $foreign);
+        }
 
         return $closure;
     }
@@ -298,5 +314,42 @@ class MigrationSnapshot extends Command
     private function existsInDefaults($field): ?string
     {
         return config("migrations-snapshot.maps.defaults.$field") != null;
+    }
+
+    private function createForeignSchema(string $table)
+    {
+
+        $foreignKeys = $this->doctrineConnection->listTableForeignKeys($table);
+
+        $tableForeign = [];
+
+        /**
+         * @var ForeignKeyConstraint|null $foreignKey
+         */
+        foreach ($foreignKeys as $foreignKey) {
+            $tableString = '$table';
+
+            $foreignTableName = $foreignKey->getForeignTableName();
+            $localColumnNames = $foreignKey->getLocalColumns();
+            $foreignColumns = $foreignKey->getForeignColumns();
+            $options = $foreignKey->getOptions();
+            $name = $foreignKey->getName();
+            $tableString .= "->foreign(['" . implode("',", $localColumnNames) . "'], '$name')"
+                . "->references(['" . implode("',", $foreignColumns) . "'])"
+                . "->on('$foreignTableName')";
+
+            foreach ($options as $key => $action) {
+                if ($action !== 'NO ACTION') {
+                    $tableString .= "->$key('$action')";
+                }
+            }
+
+            $tableForeign[] = $tableString.';';
+            unset($tableString);
+        }
+
+        dump([$table => $tableForeign]);
+
+        return $tableForeign;
     }
 }
