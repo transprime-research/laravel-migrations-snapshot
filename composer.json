@@ -24,7 +24,7 @@
     },
     "autoload-dev": {
         "psr-4": {
-            "Transprime\\Tests\\": "tests/"
+            "Transprime\\MigrationSnapshot\\Tests\\": "tests/"
         }
     },
     "minimum-stability": "dev",
