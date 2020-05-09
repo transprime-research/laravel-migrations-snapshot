@@ -1,6 +1,6 @@
 <?php
 
-namespace Transprime\MigrationSnapshot;
+namespace Transprime\MigrationsSnapshot;
 
 use Doctrine\DBAL\Schema\ForeignKeyConstraint;
 use Illuminate\Console\Command;

@@ -1,6 +1,6 @@
 <?php
 
-namespace Transprime\Providers\ServiceProviders;
+namespace Transprime\MigrationSnapshot\Providers\ServiceProviders;
 
 use Illuminate\Support\ServiceProvider;
 use Transprime\MigrationSnapshot\MigrationsSnapshot;

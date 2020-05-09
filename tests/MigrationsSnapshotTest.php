@@ -1,6 +1,6 @@
 <?php
 
-namespace Transprime\MigrationSnapshot\Tests;
+namespace Transprime\MigrationsSnapshot\Tests;
 
 class MigrationsSnapshotTest
 {
