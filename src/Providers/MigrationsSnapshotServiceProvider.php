@@ -15,7 +15,7 @@ class MigrationsSnapshotServiceProvider extends ServiceProvider
     public function boot()
     {
         $this->publishes([
-            __DIR__.'/config/migrations-snapshot.php' => config_path('migrations-snapshot.php'),
+            __DIR__.'/../../config/migrations-snapshot.php' => config_path('migrations-snapshot.php'),
         ]);
 
         if ($this->app->runningInConsole()) {
