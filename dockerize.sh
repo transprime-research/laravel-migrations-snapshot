@@ -10,10 +10,3 @@ then
 fi
 
 docker-compose exec snapshot composer install
-
-if [ "$command" = '--reset_migration' ]
-then
-    docker-compose exec snapshot php artisan migrate:fresh
-else
-    docker-compose exec snapshot php artisan migrate
-fi

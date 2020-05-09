@@ -13,3 +13,6 @@ yarn-error.log
 /.idea
 .vscode
 /database/snapshots
+/database/backup
+/database/factories/UserFactory.php
+composer.lock
