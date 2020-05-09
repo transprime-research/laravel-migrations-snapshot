@@ -33,7 +33,7 @@
     "extra": {
         "laravel": {
             "providers": [
-                "Transprime\\MigrationSnapshot\\Providers\\MigrationsSnapshotServiceProvider"
+                "Transprime\\MigrationsSnapshot\\Providers\\MigrationsSnapshotServiceProvider"
             ]
         }
     }
