@@ -93,7 +93,7 @@ class MigrationsSnapshot extends Command
         $initialPath = config('filesystem.disks.local.root');
         config()->set('filesystem.disks.local.root', database_path());
         $data = [];
-        foreach (Storage::files('migrations') as $file) {
+        foreach (Storage::disk('local')->files('migrations') as $file) {
             if (strripos($file, '.php') !== false) {
                 $matches = $this->getFileContent($file);
                 foreach ($matches[0] as $match) {
