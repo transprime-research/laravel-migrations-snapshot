@@ -1,6 +1,6 @@
 <?php
 
-namespace Transprime\MigrationSnapshot;
+namespace Transprime\MigrationsSnapshot;
 
 use Doctrine\DBAL\Schema\ForeignKeyConstraint;
 use Illuminate\Console\Command;
@@ -90,6 +90,8 @@ class MigrationsSnapshot extends Command
 
     private function getTables()
     {
+        $initialPath = config('filesystem.disks.local.root');
+        config()->set('filesystem.disks.local.root', database_path());
         $data = [];
         foreach (Storage::files('migrations') as $file) {
             if (strripos($file, '.php') !== false) {
@@ -100,6 +102,7 @@ class MigrationsSnapshot extends Command
             }
         }
 
+        config()->set('filesystem.disks.local.root', $initialPath);
         return Piper::on($data)
             ->to('array_map', fn($file) => $file[0])
             ->to('array_unique')
