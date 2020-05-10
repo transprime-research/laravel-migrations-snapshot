@@ -162,7 +162,7 @@ class MigrationsSnapshot extends Command
             mkdir("$path/batch_$timestamp", 0777, true);
         }
 
-        file_put_contents("$path./batch_$timestamp" . "/{$file_name}", $printer);
+        file_put_contents("$path/batch_$timestamp" . "/{$file_name}", $printer);
     }
 
     private function makeUpClosure(string $table, Collection $collect): Closure
