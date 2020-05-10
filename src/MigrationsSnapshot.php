@@ -158,8 +158,8 @@ class MigrationsSnapshot extends Command
 
         $path = config('migrations-snapshot.path').'/snapshots';
 
-        if (!file_exists("$path./batch_$timestamp")) {
-            mkdir("$path./batch_$timestamp");
+        if (!file_exists("$path/batch_$timestamp")) {
+            mkdir("$path/batch_$timestamp");
         }
 
         file_put_contents("$path./batch_$timestamp" . "/{$file_name}", $printer);
