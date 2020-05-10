@@ -1,7 +1,7 @@
 <?php
 
 return [
-    'path' => 'database',
+    'path' => database_path(),
     'maps' => [
 
         'types' => [
@@ -39,8 +39,11 @@ return [
 
         'defaults' => [
             'CURRENT_TIMESTAMP' => 'useCurrent',
-        ]
+        ],
 
+        'foreign' => [
+            // tba
+        ]
 
 //        'pending' => '',
     ]

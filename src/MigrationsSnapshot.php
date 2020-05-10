@@ -22,7 +22,7 @@ class MigrationsSnapshot extends Command
      *
      * @var string
      */
-    protected $signature = 'migration:snapshot';
+    protected $signature = 'migrations:snapshot';
 
     /**
      * The console command description.
@@ -155,7 +155,11 @@ class MigrationsSnapshot extends Command
 
         $printer = (new PsrPrinter())->printFile($file);
 
-        $path = database_path('snapshots');
+        $path = config('migrations-snapshot.path').'/snapshots';
+
+        if (!file_exists($path)) {
+            mkdir($path);
+        }
 
         file_put_contents($path . "/{$file_name}", $printer);
     }
