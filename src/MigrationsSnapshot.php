@@ -75,10 +75,22 @@ class MigrationsSnapshot extends Command
         //todo.update migrate in the order of migrations file
         $tablesFromFile = $this->getTables();
 
+        $timestamp = now()->format('Y_m_d_His');
+        $path = config('migrations-snapshot.path')."/snapshots/batch_$timestamp";
+
+        $this->info("Migrations snapshot starting: ".count($availableTables).' tables total');
+
+        if (!file_exists($path)) {
+            mkdir($path, 0777, true);
+            $this->info("Created directory: $path");
+        }
+
+        $this->info("Using directory: $path");
+
         \piper($availableTables)
             ->to('array_merge_recursive_distinct', $tablesFromFile)
             ->to('array_values')
-            ->to('array_map', fn($table) => $this->createSchema($table))
+            ->to('array_map', fn($table) => $this->createSchema($table, $timestamp, $path))
             ->up();
 
 //        collect()
@@ -130,7 +142,7 @@ class MigrationsSnapshot extends Command
             ->to('trim')();
     }
 
-    private function createSchema(string $table)
+    private function createSchema(string $table, string $timestamp, string $path)
     {
         if ($this->connection === 'mysql') {
             $schema = DB::select(\DB::raw("SHOW COLUMNS FROM $table"));
@@ -139,11 +151,10 @@ class MigrationsSnapshot extends Command
         }
 
         $create_name = "create_${table}_table";
-        $timestamp = now()->format('Y_m_d_His');
 
         $file_name =  $timestamp. "_${create_name}.php";
 
-        dump("Creating: ${file_name}.php");
+        $this->info("Creating: ${file_name}.php");
 
         $file = $this->createFile();
 
@@ -156,13 +167,9 @@ class MigrationsSnapshot extends Command
 
         $printer = (new PsrPrinter())->printFile($file);
 
-        $path = config('migrations-snapshot.path').'/snapshots';
+        file_put_contents("$path/{$file_name}", $printer);
 
-        if (!file_exists("$path/batch_$timestamp")) {
-            mkdir("$path/batch_$timestamp", 0777, true);
-        }
-
-        file_put_contents("$path/batch_$timestamp" . "/{$file_name}", $printer);
+        $this->info("Created: ${file_name}.php");
     }
 
     private function makeUpClosure(string $table, Collection $collect): Closure
@@ -355,8 +362,6 @@ class MigrationsSnapshot extends Command
             $tableForeign[] = $tableString.';';
             unset($tableString);
         }
-
-        dump([$table => $tableForeign]);
 
         return $tableForeign;
     }
