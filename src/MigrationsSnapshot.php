@@ -139,8 +139,9 @@ class MigrationsSnapshot extends Command
         }
 
         $create_name = "create_${table}_table";
+        $timestamp = now()->format('Y_m_d_His');
 
-        $file_name = now()->format('Y_m_d_His') . "_${create_name}.php";
+        $file_name =  $timestamp. "_${create_name}.php";
 
         dump("Creating: ${file_name}.php");
 
@@ -157,11 +158,11 @@ class MigrationsSnapshot extends Command
 
         $path = config('migrations-snapshot.path').'/snapshots';
 
-        if (!file_exists($path)) {
-            mkdir($path);
+        if (!file_exists("$path./batch_$timestamp")) {
+            mkdir("$path./batch_$timestamp");
         }
 
-        file_put_contents($path . "/{$file_name}", $printer);
+        file_put_contents("$path./batch_$timestamp" . "/{$file_name}", $printer);
     }
 
     private function makeUpClosure(string $table, Collection $collect): Closure
