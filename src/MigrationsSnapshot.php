@@ -7,13 +7,11 @@ use Illuminate\Console\Command;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Nette\PhpGenerator\ClassType;
 use Nette\PhpGenerator\Closure;
 use Nette\PhpGenerator\PhpFile;
 use Nette\PhpGenerator\PsrPrinter;
-use Transprime\Piper\Piper;
 
 class MigrationsSnapshot extends Command
 {
@@ -52,7 +50,7 @@ class MigrationsSnapshot extends Command
         parent::__construct();
 
         $this->connection = config('database.default');
-        $this->database = config('database.connections.'.$this->connection.'.database');
+        $this->database = config('database.connections.' . $this->connection . '.database');
         $this->doctrineConnection = DB::connection($this->connection)->getDoctrineSchemaManager();
     }
 
@@ -67,79 +65,32 @@ class MigrationsSnapshot extends Command
         //see: https://doc.nette.org/en/3.0/php-generator
 
         $availableTables = collect(Schema::getAllTables())
-            ->pluck('Tables_in_'.$this->database)
+            ->pluck('Tables_in_' . $this->database)
             ->diff(['migrations'])
             ->values()
             ->all();
 
         //todo.update migrate in the order of migrations file
-        $tablesFromFile = $this->getTables();
 
         $timestamp = now()->format('Y_m_d_His');
-        $path = config('migrations-snapshot.path')."/snapshots/batch_$timestamp";
+        $path = config('migrations-snapshot.path') . "/snapshots/batch_$timestamp";
 
-        $this->info("Migrations snapshot starting: ".count($availableTables).' tables total');
+        $this->alert("Migrations snapshot starting: " . count($availableTables) . ' tables total');
 
         if (!file_exists($path)) {
             mkdir($path, 0777, true);
-            $this->info("Created directory: $path");
+            $this->alert("Created directory: $path");
         }
 
         $this->info("Using directory: $path");
 
         \piper($availableTables)
-            ->to('array_merge_recursive_distinct', $tablesFromFile)
             ->to('array_values')
-            ->to('array_map', fn($table) => $this->createSchema($table, $timestamp, $path))
-            ->up();
+            ->to('array_map', function ($table) use ($timestamp, $path) {
+                return $this->createSchema($table, $timestamp, $path);
+            })->up();
 
-//        collect()
-//            ->intersect()
-//            ->each(function ($table) use ($conn) {
-//                ;
-//            });
-    }
-
-    private function getTables()
-    {
-        $initialPath = config('filesystem.disks.local.root');
-        config()->set('filesystem.disks.local.root', database_path());
-        $data = [];
-        foreach (Storage::disk('local')->files('migrations') as $file) {
-            if (strripos($file, '.php') !== false) {
-                $matches = $this->getFileContent($file);
-                foreach ($matches[0] as $match) {
-                    $data[$file][] = $this->getATable($match);
-                }
-            }
-        }
-
-        config()->set('filesystem.disks.local.root', $initialPath);
-        return Piper::on($data)
-            ->to('array_map', fn($file) => $file[0])
-            ->to('array_unique')
-            ->to(fn($tables) => array_filter($tables, fn($table) => strripos($table, ' ') === false))
-            ->to('array_values')();
-    }
-
-    private function getFileContent($file)
-    {
-        return piper($file)
-            ->to([Storage::class, 'get'])
-            ->to(function ($content) {
-                preg_match_all("/Schema::\w+\(.*?\)/", $content, $matches);
-
-                return $matches;
-            })();
-    }
-
-    private function getATable(string $match)
-    {
-        return piper($match)
-            ->to('explode', '(')
-            ->to(fn($data) => $data[1])
-            ->to('str_replace', [')', 'function', '\'', ','], '')
-            ->to('trim')();
+        $this->info("Migrations snapshot finished: " . count($availableTables) . ' tables total');
     }
 
     private function createSchema(string $table, string $timestamp, string $path)
@@ -152,9 +103,9 @@ class MigrationsSnapshot extends Command
 
         $create_name = "create_${table}_table";
 
-        $file_name =  $timestamp. "_${create_name}.php";
+        $file_name = $timestamp . "_${create_name}.php";
 
-        $this->info("Creating: ${file_name}.php");
+        $this->alert("Creating: ${file_name}.php");
 
         $file = $this->createFile();
 
@@ -170,6 +121,8 @@ class MigrationsSnapshot extends Command
         file_put_contents("$path/{$file_name}", $printer);
 
         $this->info("Created: ${file_name}.php");
+
+        return true;
     }
 
     private function makeUpClosure(string $table, Collection $collect): Closure
@@ -359,7 +312,7 @@ class MigrationsSnapshot extends Command
                 }
             }
 
-            $tableForeign[] = $tableString.';';
+            $tableForeign[] = $tableString . ';';
             unset($tableString);
         }
 
