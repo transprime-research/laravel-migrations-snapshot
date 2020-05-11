@@ -69,7 +69,7 @@ class CreateForeignSchema
 
         foreach ($foreignKeysNames as $name) {
             $closure->addBody(
-                '$table->dropForeign('.$name.'\');'
+                '$table->dropForeign(\''.$name.'\');'
             );
         }
 
