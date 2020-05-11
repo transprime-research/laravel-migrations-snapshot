@@ -53,7 +53,7 @@ class CreateNormalSchema
         $closure = $this->fileMaker->makeClosure();
 
         $collect->each(function (\stdClass $column) use (&$closure) {
-            $closure->addBody($closure, $this->createColumn($column));
+            $closure->addBody($this->createColumn($column));
         });
 
         return $closure;
