@@ -77,11 +77,11 @@ class MigrationsSnapshot extends Command
         piper($availableTables)
             ->to('array_values')
             ->to('array_map', function ($table) use ($timestamp, $path, $createNormalSchema) {
-                $this->makeCreateFile($createNormalSchema, $table, $timestamp, $path);
+                $this->makeCreateFile($createNormalSchema, $table, $path, $timestamp);
 
                 return $table;
             })->to('array_map', function ($table) use ($timestamp, $path, $createForeignSchema) {
-                $this->makeForeignKeysFile($createForeignSchema, $table, $timestamp, $path);
+                $this->makeForeignKeysFile($createForeignSchema, $table, $path, $timestamp);
 
                 return $table;
             })->up();
@@ -124,7 +124,7 @@ class MigrationsSnapshot extends Command
         $create_name = "create_${table}_table";
         $file_name = $timestamp . "_${create_name}.php";
 
-        $this->alert("Creating: ${file_name}.php");
+        $this->alert("Creating: ${file_name}");
 
         $createNormalSchema->run($this->connection, $table, $create_name, "$path/$file_name");
 
