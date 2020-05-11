@@ -26,6 +26,13 @@ class ForeignKeysMigrationFileMaker implements FileMakerInterface
      */
     private $printer;
 
+    /**
+     *see: https://doc.nette.org/en/3.0/php-generator
+     *
+     * ForeignKeysMigrationFileMaker constructor.
+     * @param PhpFile $phpFile
+     * @param PsrPrinter $printer
+     */
     public function __construct(PhpFile $phpFile, PsrPrinter $printer)
     {
         $this->phpFile = $phpFile;

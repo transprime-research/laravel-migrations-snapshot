@@ -57,15 +57,11 @@ class MigrationsSnapshot extends Command
     /**
      * Execute the console command.
      *
-     * @param CreateNormalSchema $createNormalSchema
-     * @param CreateForeignSchema $createForeignSchema
      * @return mixed
      * @throws \Transprime\Piper\Exceptions\PiperException
      */
-    public function handle(CreateNormalSchema $createNormalSchema, CreateForeignSchema $createForeignSchema)
+    public function handle()
     {
-        //see: https://doc.nette.org/en/3.0/php-generator
-
         $availableTables = $this->getTables();
 
         [$path, $timestamp] = $this->preparePath();
@@ -76,12 +72,12 @@ class MigrationsSnapshot extends Command
 
         piper($availableTables)
             ->to('array_values')
-            ->to('array_map', function ($table) use ($timestamp, $path, $createNormalSchema) {
-                $this->makeCreateFile($createNormalSchema, $table, $path, $timestamp);
+            ->to('array_map', function ($table) use ($timestamp, $path) {
+                $this->makeCreateFile(app(CreateNormalSchema::class), $table, $path, $timestamp);
 
                 return $table;
-            })->to('array_map', function ($table) use ($timestamp, $path, $createForeignSchema) {
-                $this->makeForeignKeysFile($createForeignSchema, $table, $path, $timestamp);
+            })->to('array_map', function ($table) use ($timestamp, $path) {
+                $this->makeForeignKeysFile(app(CreateForeignSchema::class), $table, $path, $timestamp);
 
                 return $table;
             })->up();
