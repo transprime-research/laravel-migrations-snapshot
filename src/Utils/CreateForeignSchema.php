@@ -36,6 +36,11 @@ class CreateForeignSchema
             ->createClass($create_name, $table);
 
         $foreignDeclarations = $this->createSchemaRows($schemaManager, $table);
+
+        if (!$foreignDeclarations) {
+            return false;
+        }
+
         $upClosure = $this->makeUpClosure($foreignDeclarations);
 
         $downClosure = $this->makeDownClosure(array_keys($foreignDeclarations));

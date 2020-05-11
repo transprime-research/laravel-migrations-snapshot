@@ -80,7 +80,7 @@ class ForeignKeysMigrationFileMaker implements FileMakerInterface
             ->setVisibility('public')
             ->addComment('Reverse the migrations')
             ->setBody(
-                "Schema::table(\'' . $table_name . '\', ' . $closure . ');'",
+                'Schema::table(\'' . $table_name . '\', ' . $closure . ');',
             );
 
         return $this;
