@@ -140,8 +140,12 @@ class MigrationsSnapshot extends Command
 
         $this->alert("Creating: ${file_name}.php");
 
-        $foreignSchema->run($this->doctrineSchemaManager, $table, $create_name, "$path/$file_name");
+        $result = $foreignSchema->run($this->doctrineSchemaManager, $table, $create_name, "$path/$file_name");
 
-        $this->info("Created: ${file_name}.php");
+        if ($result) {
+            $this->info("Created: ${file_name}.php");
+        } else {
+            $this->warn("Skipped: ${file_name}.php");
+        }
     }
 }
