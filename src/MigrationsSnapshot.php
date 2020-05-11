@@ -3,16 +3,9 @@
 namespace Transprime\MigrationsSnapshot;
 
 use Doctrine\DBAL\Schema\AbstractSchemaManager;
-use Doctrine\DBAL\Schema\ForeignKeyConstraint;
 use Illuminate\Console\Command;
-use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
-use Illuminate\Support\Str;
-use Nette\PhpGenerator\ClassType;
-use Nette\PhpGenerator\Closure;
-use Nette\PhpGenerator\PhpFile;
-use Nette\PhpGenerator\PsrPrinter;
 use Transprime\MigrationsSnapshot\Utils\CreateForeignSchema;
 use Transprime\MigrationsSnapshot\Utils\CreateNormalSchema;
 

@@ -8,6 +8,7 @@ use Transprime\MigrationsSnapshot\Concrete\ForeignKeysMigrationFileMaker;
 use Transprime\MigrationsSnapshot\Interfaces\FileMakerInterface;
 use Transprime\MigrationsSnapshot\MigrationsSnapshot;
 use Transprime\MigrationsSnapshot\Utils\CreateForeignSchema;
+use Transprime\MigrationsSnapshot\Utils\CreateNormalSchema;
 
 class MigrationsSnapshotServiceProvider extends ServiceProvider
 {
@@ -18,7 +19,7 @@ class MigrationsSnapshotServiceProvider extends ServiceProvider
      */
     public function boot()
     {
-        $this->app->when(CreateForeignSchema::class)
+        $this->app->when(CreateNormalSchema::class)
             ->needs(FileMakerInterface::class)
             ->give(CreateMigrationFileMaker::class);
 
