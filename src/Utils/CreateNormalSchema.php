@@ -6,10 +6,7 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
-use Nette\PhpGenerator\ClassType;
 use Nette\PhpGenerator\Closure;
-use Nette\PhpGenerator\PhpFile;
-use Nette\PhpGenerator\PsrPrinter;
 use Transprime\MigrationsSnapshot\Interfaces\FileMakerInterfaces;
 
 class CreateNormalSchema
@@ -48,16 +45,15 @@ class CreateNormalSchema
     }
 
     /**
-     * @param FileMakerInterfaces $fileMaker
      * @param Collection $collect
      * @return Closure
      */
-    private function makeUpClosure($fileMaker, Collection $collect): Closure
+    private function makeUpClosure(Collection $collect): Closure
     {
-        $closure = $fileMaker->makeClosure();
+        $closure = $this->fileMaker->makeClosure();
 
         $collect->each(function (\stdClass $column) use (&$closure) {
-            $this->addToClosure($closure, $this->createColumn($column));
+            $closure->addBody($closure, $this->createColumn($column));
         });
 
         return $closure;
@@ -120,61 +116,6 @@ class CreateNormalSchema
         }
 
         return "$parametersString)";
-    }
-
-    private function addToClosure(Closure $closure, string $content)
-    {
-        return $closure->addBody($content);
-    }
-
-    private function createUpMethod(ClassType $class, string $table_name, string $closure)
-    {
-        return $class->addMethod('up')
-            ->setVisibility('public')
-            ->addComment('Run the migrations')
-            ->setBody(
-                'Schema::create(\'' . $table_name . '\', ' . $closure . ');'
-            );
-    }
-
-    private function createClass(PhpFile $file, string $create_name, string $table_name)
-    {
-        $class = $file->addClass(Str::studly($create_name));
-
-        $class->addExtend('Migration');
-        $class->addComment("Migration for $table_name table");
-
-        return $class;
-    }
-
-    private function createDownMethod(ClassType $class, string $table_name)
-    {
-        return $class->addMethod('down')
-            ->setVisibility('public')
-            ->addComment('Reverse the migrations')
-            ->setBody(
-                "Schema::dropIfExists('${table_name}');"
-            );
-    }
-
-    private function createFile()
-    {
-        $file = new PhpFile();
-
-        $file->addUse('Illuminate\Database\Schema\Blueprint');
-        $file->addUse('Illuminate\Support\Facades\Schema');
-        $file->addUse('Illuminate\Database\Migrations\Migration');
-
-        return $file;
-    }
-
-    private function addClosure()
-    {
-        $closure = new Closure();
-        $closure->addParameter('table')
-            ->setType('BluePrint');
-
-        return $closure;
     }
 
     private function extraMaps($field): ?string

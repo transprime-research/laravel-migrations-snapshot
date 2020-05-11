@@ -2,39 +2,83 @@
 
 namespace Transprime\MigrationsSnapshot\Utils;
 
+use Doctrine\DBAL\Schema\AbstractSchemaManager;
 use Doctrine\DBAL\Schema\ForeignKeyConstraint;
+use Illuminate\Support\Str;
 use Nette\PhpGenerator\Closure;
+use Transprime\MigrationsSnapshot\Interfaces\FileMakerInterfaces;
 
 class CreateForeignSchema
 {
-    public function makeUpClosures(string $table)
-    {
-        $closure = $this->addClosure();
+    /**
+     * @var FileMakerInterfaces $fileMaker
+     */
+    private $fileMaker;
 
-        foreach ($this->createForeignSchema($table) as $foreign) {
-            $this->addToClosure($closure, $foreign);
-        }
+    public function __construct($fileMaker)
+    {
+        $this->fileMaker = $fileMaker;
     }
 
-    private function addClosure()
+    /**
+     * @param AbstractSchemaManager $schemaManager
+     * @param string $table
+     * @param string $create_name
+     * @param string $fullPath
+     * @return bool
+     */
+    public function run($schemaManager, string $table, string $create_name, string $fullPath)
     {
-        $closure = new Closure();
-        $closure->addParameter('table')
-            ->setType('BluePrint');
+        $create_name = Str::studly($create_name);
+
+        $file = $this->fileMaker
+            ->createFile()
+            ->createClass($create_name, $table);
+
+        $foreignDeclarations = $this->createSchemaRows($schemaManager, $table);
+        $upClosure = $this->makeUpClosure($foreignDeclarations);
+
+        $downClosure = $this->makeDownClosure(array_keys($foreignDeclarations));
+
+        $file->createUpMethod($table, $upClosure)
+            ->createDownMethod($table, $downClosure)
+            ->saveFile($fullPath);
+
+        return true;
+    }
+
+    public function makeUpClosure(array $foreignDeclarations)
+    {
+        $closure = $this->fileMaker->makeClosure();
+
+        foreach ($foreignDeclarations as $foreign) {
+            $closure->addBody($foreign);
+        }
 
         return $closure;
     }
 
-
-    private function addToClosure(Closure $closure, string $content)
+    public function makeDownClosure(array $foreignKeysNames)
     {
-        return $closure->addBody($content);
+        $closure = $this->fileMaker->makeClosure();
+
+        foreach ($foreignKeysNames as $name) {
+            $closure->addBody(
+                '$table->dropForeign('.$name.'\');'
+            );
+        }
+
+        return $closure;
     }
 
-    private function createForeignSchema(string $table)
+    /**
+     * @param AbstractSchemaManager $schemaManager
+     * @param string $table
+     * @return array
+     */
+    private function createSchemaRows($schemaManager, string $table)
     {
-
-        $foreignKeys = $this->doctrineConnection->listTableForeignKeys($table);
+        $foreignKeys = $schemaManager->listTableForeignKeys($table);
 
         $tableForeign = [];
 
@@ -59,7 +103,7 @@ class CreateForeignSchema
                 }
             }
 
-            $tableForeign[] = $tableString . ';';
+            $tableForeign[$name] = $tableString . ';';
             unset($tableString);
         }
 

@@ -2,6 +2,7 @@
 
 namespace Transprime\MigrationsSnapshot;
 
+use Doctrine\DBAL\Schema\AbstractSchemaManager;
 use Doctrine\DBAL\Schema\ForeignKeyConstraint;
 use Illuminate\Console\Command;
 use Illuminate\Support\Collection;
@@ -12,6 +13,7 @@ use Nette\PhpGenerator\ClassType;
 use Nette\PhpGenerator\Closure;
 use Nette\PhpGenerator\PhpFile;
 use Nette\PhpGenerator\PsrPrinter;
+use Transprime\MigrationsSnapshot\Utils\CreateForeignSchema;
 use Transprime\MigrationsSnapshot\Utils\CreateNormalSchema;
 
 class MigrationsSnapshot extends Command
@@ -39,7 +41,11 @@ class MigrationsSnapshot extends Command
      * @var \Illuminate\Config\Repository|string $database
      */
     private $database;
-    private $doctrineConnection;
+
+    /**
+     * @var AbstractSchemaManager $doctrineSchemaManager
+     */
+    private $doctrineSchemaManager;
 
     /**
      * Create a new command instance.
@@ -52,55 +58,101 @@ class MigrationsSnapshot extends Command
 
         $this->connection = config('database.default');
         $this->database = config('database.connections.' . $this->connection . '.database');
-        $this->doctrineConnection = DB::connection($this->connection)->getDoctrineSchemaManager();
+        $this->doctrineSchemaManager = DB::connection($this->connection)->getDoctrineSchemaManager();
     }
 
     /**
      * Execute the console command.
      *
      * @param CreateNormalSchema $createNormalSchema
+     * @param CreateForeignSchema $createForeignSchema
      * @return mixed
      * @throws \Transprime\Piper\Exceptions\PiperException
      */
-    public function handle(CreateNormalSchema $createNormalSchema)
+    public function handle(CreateNormalSchema $createNormalSchema, CreateForeignSchema $createForeignSchema)
     {
         //see: https://doc.nette.org/en/3.0/php-generator
 
-        $availableTables = collect(Schema::getAllTables())
+        $availableTables = $this->getTables();
+
+        [$path, $timestamp] = $this->preparePath();
+
+        $this->alert("Migrations snapshot starting: " . count($availableTables) . ' tables total');
+
+        $this->info("Using directory: $path");
+
+        piper($availableTables)
+            ->to('array_values')
+            ->to('array_map', function ($table) use ($timestamp, $path, $createNormalSchema) {
+                $this->makeCreateFile($createNormalSchema, $table, $timestamp, $path);
+
+                return $table;
+            })->to('array_map', function ($table) use ($timestamp, $path, $createForeignSchema) {
+                $this->makeForeignKeysFile($createForeignSchema, $table, $timestamp, $path);
+
+                return $table;
+            })->up();
+
+        $this->info("Migrations snapshot finished: " . count($availableTables) . ' tables total');
+    }
+
+    private function getTables()
+    {
+        return collect(Schema::getAllTables())
             ->pluck('Tables_in_' . $this->database)
             ->diff(['migrations'])
             ->values()
-            ->all();
+            ->all();;
+    }
 
+    private function preparePath()
+    {
         //todo.update migrate in the order of migrations file
 
         $timestamp = now()->format('Y_m_d_His');
         $path = config('migrations-snapshot.path') . "/snapshots/batch_$timestamp";
-
-        $this->alert("Migrations snapshot starting: " . count($availableTables) . ' tables total');
 
         if (!file_exists($path)) {
             mkdir($path, 0777, true);
             $this->alert("Created directory: $path");
         }
 
-        $this->info("Using directory: $path");
+        return [$path, $timestamp];
+    }
 
-        \piper($availableTables)
-            ->to('array_values')
-            ->to('array_map', function ($table) use ($timestamp, $path, $createNormalSchema) {
-                $create_name = "create_${table}_table";
-                $file_name = $timestamp . "_${create_name}.php";
+    /**
+     * @param CreateNormalSchema $createNormalSchema
+     * @param string $table
+     * @param string $path
+     * @param string $timestamp
+     */
+    private function makeCreateFile($createNormalSchema, string $table, string $path, string $timestamp)
+    {
+        $create_name = "create_${table}_table";
+        $file_name = $timestamp . "_${create_name}.php";
 
-                $this->alert("Creating: ${file_name}.php");
+        $this->alert("Creating: ${file_name}.php");
 
-                $createNormalSchema->run($this->connection, $table, $create_name, "$path/$file_name");
+        $createNormalSchema->run($this->connection, $table, $create_name, "$path/$file_name");
 
-                $this->info("Created: ${file_name}.php");
+        $this->info("Created: ${file_name}.php");
+    }
 
-                return $table;
-            })->up();
+    /**
+     * @param CreateForeignSchema $foreignSchema
+     * @param string $table
+     * @param string $path
+     * @param string $timestamp
+     */
+    private function makeForeignKeysFile($foreignSchema, string $table, string $path, string $timestamp)
+    {
+        $create_name = "update_${table}_table_add_foreign_keys";
+        $file_name = $timestamp . "_${create_name}.php";
 
-        $this->info("Migrations snapshot finished: " . count($availableTables) . ' tables total');
+        $this->alert("Creating: ${file_name}.php");
+
+        $foreignSchema->run($this->doctrineSchemaManager, $table, $create_name, "$path/$file_name");
+
+        $this->info("Created: ${file_name}.php");
     }
 }
