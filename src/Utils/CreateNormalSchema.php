@@ -7,16 +7,16 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use Nette\PhpGenerator\Closure;
-use Transprime\MigrationsSnapshot\Interfaces\FileMakerInterfaces;
+use Transprime\MigrationsSnapshot\Interfaces\FileMakerInterface;
 
 class CreateNormalSchema
 {
     /**
-     * @var FileMakerInterfaces
+     * @var FileMakerInterface
      */
-    private FileMakerInterfaces $fileMaker;
+    private FileMakerInterface $fileMaker;
 
-    public function __construct(FileMakerInterfaces $fileMaker)
+    public function __construct(FileMakerInterface $fileMaker)
     {
         $this->fileMaker = $fileMaker;
     }

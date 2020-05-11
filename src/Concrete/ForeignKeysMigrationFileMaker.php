@@ -7,9 +7,9 @@ use Nette\PhpGenerator\ClassType;
 use Nette\PhpGenerator\Closure;
 use Nette\PhpGenerator\PhpFile;
 use Nette\PhpGenerator\PsrPrinter;
-use Transprime\MigrationsSnapshot\Interfaces\FileMakerInterfaces;
+use Transprime\MigrationsSnapshot\Interfaces\FileMakerInterface;
 
-class ForeignKeysMigrationFileMaker implements FileMakerInterfaces
+class ForeignKeysMigrationFileMaker implements FileMakerInterface
 {
     /**
      * @var PhpFile $phpFile

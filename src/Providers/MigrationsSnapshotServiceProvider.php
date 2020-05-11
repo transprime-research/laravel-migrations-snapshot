@@ -3,7 +3,11 @@
 namespace Transprime\MigrationsSnapshot\Providers;
 
 use Illuminate\Support\ServiceProvider;
+use Transprime\MigrationsSnapshot\Concrete\CreateMigrationFileMaker;
+use Transprime\MigrationsSnapshot\Concrete\ForeignKeysMigrationFileMaker;
+use Transprime\MigrationsSnapshot\Interfaces\FileMakerInterface;
 use Transprime\MigrationsSnapshot\MigrationsSnapshot;
+use Transprime\MigrationsSnapshot\Utils\CreateForeignSchema;
 
 class MigrationsSnapshotServiceProvider extends ServiceProvider
 {
@@ -14,6 +18,14 @@ class MigrationsSnapshotServiceProvider extends ServiceProvider
      */
     public function boot()
     {
+        $this->app->when(CreateForeignSchema::class)
+            ->needs(FileMakerInterface::class)
+            ->give(CreateMigrationFileMaker::class);
+
+        $this->app->when(CreateForeignSchema::class)
+            ->needs(FileMakerInterface::class)
+            ->give(ForeignKeysMigrationFileMaker::class);
+
         $this->publishes([
             __DIR__.'/../../config/migrations-snapshot.php' => config_path('migrations-snapshot.php'),
         ], 'migrations-snapshot');

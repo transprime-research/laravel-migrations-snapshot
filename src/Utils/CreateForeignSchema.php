@@ -6,16 +6,16 @@ use Doctrine\DBAL\Schema\AbstractSchemaManager;
 use Doctrine\DBAL\Schema\ForeignKeyConstraint;
 use Illuminate\Support\Str;
 use Nette\PhpGenerator\Closure;
-use Transprime\MigrationsSnapshot\Interfaces\FileMakerInterfaces;
+use Transprime\MigrationsSnapshot\Interfaces\FileMakerInterface;
 
 class CreateForeignSchema
 {
     /**
-     * @var FileMakerInterfaces $fileMaker
+     * @var FileMakerInterface $fileMaker
      */
     private $fileMaker;
 
-    public function __construct($fileMaker)
+    public function __construct(FileMakerInterface $fileMaker)
     {
         $this->fileMaker = $fileMaker;
     }
